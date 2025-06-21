@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import TodoInputSection from './ui/TodoInputSection';
-import TodoListSection from './ui/TodoListSection';
+import TodoInputSection from './TodoInputSection';
+import TodoList from './TodoList';
 
-// Define the Todo interface
 interface Todo {
   id: string;
   title: string;
   description: string;
-  status: 'active' | 'done';
+  status: 'active' | 'inProgress' | 'done';
 }
 
 export default function TodoApp() {
+  console.log('TodoApp rendering'); // Debug log
   const [todos, setTodos] = useState<Todo[]>([]);
   const [filter, setFilter] = useState('All');
 
@@ -45,12 +45,7 @@ export default function TodoApp() {
     if (title.trim()) {
       setTodos([
         ...todos,
-        {
-          id: Date.now().toString(),
-          title,
-          description,
-          status: 'active',
-        },
+        { id: Date.now().toString(), title, description, status: 'active' },
       ]);
     }
   };
@@ -64,7 +59,7 @@ export default function TodoApp() {
   };
 
   const deleteTodo = (id: string) => {
-    console.log('Deleting todo with id:', id); // Debug log
+    console.log('Deleting todo with id:', id);
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
@@ -72,7 +67,15 @@ export default function TodoApp() {
     setTodos(
       todos.map((todo) =>
         todo.id === id
-          ? { ...todo, status: todo.status === 'active' ? 'done' : 'active' }
+          ? {
+              ...todo,
+              status:
+                todo.status === 'active'
+                  ? 'inProgress'
+                  : todo.status === 'inProgress'
+                  ? 'done'
+                  : 'active',
+            }
           : todo
       )
     );
@@ -87,11 +90,30 @@ export default function TodoApp() {
     <View style={styles.container}>
       <Text style={styles.header}>TODO APP</Text>
       <TodoInputSection onAddTodo={addTodo} />
+      <View style={styles.filterContainer}>
+        {['All', 'Active', 'In Progress', 'Done'].map((filterOption) => (
+          <TouchableOpacity
+            key={filterOption}
+            style={[
+              styles.filterButton,
+              filter === filterOption && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter(filterOption)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                filter === filterOption && styles.filterTextActive,
+              ]}
+            >
+              {filterOption}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <View style={styles.divider} />
-      <TodoListSection
+      <TodoList
         todos={filteredTodos}
-        filter={filter}
-        onFilterChange={setFilter}
         onToggleStatus={toggleTodoStatus}
         onUpdateTodo={updateTodo}
         onDeleteTodo={deleteTodo}
@@ -101,18 +123,23 @@ export default function TodoApp() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  container: { flex: 1, padding: 10 },
+  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#ccc',
-    marginVertical: 20,
+  filterButton: {
+    flex: 1,
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 5,
+    backgroundColor: '#e0e0f0',
+    alignItems: 'center',
   },
+  filterButtonActive: { backgroundColor: '#6200EE' },
+  filterText: { color: '#333', fontWeight: '500' },
+  filterTextActive: { color: 'white' },
+  divider: { height: 1, backgroundColor: '#ccc', marginVertical: 20 },
 });
