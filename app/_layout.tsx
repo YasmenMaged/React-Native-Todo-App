@@ -1,12 +1,12 @@
 import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+import TabNavigator from '../navigation/TabNavigator';
 
 export default function Layout() {
+  console.log('Layout rendering with NavigationContainer'); // Debug log
   return (
-    <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
-    </SafeAreaProvider>
+    <NavigationContainer>
+      <TabNavigator />
+    </NavigationContainer>
   );
 }
