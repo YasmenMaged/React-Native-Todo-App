@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector, useDispatch } from 'react-redux';
 import TodoInputSection from './TodoInputSection';
 import TodoList from './TodoList';
+import { setFilter, addTodo, updateTodo, deleteTodo, toggleTodoStatus } from '../store/todoSlice';
 
 interface Todo {
   id: string;
@@ -12,74 +13,10 @@ interface Todo {
 }
 
 export default function TodoApp() {
-  console.log('TodoApp rendering'); // Debug log
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [filter, setFilter] = useState('All');
-
-  useEffect(() => {
-    loadTodos();
-  }, []);
-
-  useEffect(() => {
-    saveTodos();
-  }, [todos]);
-
-  const loadTodos = async () => {
-    try {
-      const savedTodos = await AsyncStorage.getItem('todos');
-      if (savedTodos) setTodos(JSON.parse(savedTodos));
-    } catch (error) {
-      console.log('Error loading todos:', error);
-    }
-  };
-
-  const saveTodos = async () => {
-    try {
-      await AsyncStorage.setItem('todos', JSON.stringify(todos));
-    } catch (error) {
-      console.log('Error saving todos:', error);
-    }
-  };
-
-  const addTodo = (title: string, description: string) => {
-    if (title.trim()) {
-      setTodos([
-        ...todos,
-        { id: Date.now().toString(), title, description, status: 'active' },
-      ]);
-    }
-  };
-
-  const updateTodo = (id: string, newTitle: string, newDescription: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, title: newTitle, description: newDescription } : todo
-      )
-    );
-  };
-
-  const deleteTodo = (id: string) => {
-    console.log('Deleting todo with id:', id);
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  const toggleTodoStatus = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id
-          ? {
-              ...todo,
-              status:
-                todo.status === 'active'
-                  ? 'inProgress'
-                  : todo.status === 'inProgress'
-                  ? 'done'
-                  : 'active',
-            }
-          : todo
-      )
-    );
-  };
+  console.log('TodoApp rendering');
+  const dispatch = useDispatch();
+  const todos = useSelector((state: { todos: Todo[] }) => state.todos);
+  const filter = useSelector((state: { filter: string }) => state.filter);
 
   const filteredTodos = todos.filter((todo) => {
     if (filter === 'All') return true;
@@ -89,7 +26,7 @@ export default function TodoApp() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>TODO APP</Text>
-      <TodoInputSection onAddTodo={addTodo} />
+      <TodoInputSection onAddTodo={(title, description) => dispatch(addTodo({ title, description }))} />
       <View style={styles.filterContainer}>
         {['All', 'Active', 'In Progress', 'Done'].map((filterOption) => (
           <TouchableOpacity
@@ -98,7 +35,7 @@ export default function TodoApp() {
               styles.filterButton,
               filter === filterOption && styles.filterButtonActive,
             ]}
-            onPress={() => setFilter(filterOption)}
+            onPress={() => dispatch(setFilter(filterOption))}
           >
             <Text
               style={[
@@ -114,9 +51,9 @@ export default function TodoApp() {
       <View style={styles.divider} />
       <TodoList
         todos={filteredTodos}
-        onToggleStatus={toggleTodoStatus}
-        onUpdateTodo={updateTodo}
-        onDeleteTodo={deleteTodo}
+        onToggleStatus={(id) => dispatch(toggleTodoStatus(id))}
+        onUpdateTodo={(id, newTitle, newDescription) => dispatch(updateTodo({ id, title: newTitle, description: newDescription }))}
+        onDeleteTodo={(id) => dispatch(deleteTodo(id))}
       />
     </View>
   );
